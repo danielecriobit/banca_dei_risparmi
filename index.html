@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1B5E3F">
+<title>Salvadanaio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF2EC; --surface:#FFFFFF; --ink:#10211A; --muted:#5F6F66; --line:#D9E1DB;
+  --green:#1B5E3F; --green-soft:#DCEBE2; --amber:#C9820A; --amber-soft:#FBEFD6; --red:#B8402E;
+  --radius:18px; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#0E1613; --surface:#162019; --ink:#EAF1EC; --muted:#93A399; --line:#26332C;
+  --green:#4CAF82; --green-soft:#1C3328; --amber:#F2B23E; --amber-soft:#3A2B10; --red:#E06A58; color-scheme:dark;
+}}
+*{box-sizing:border-box} html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 'Sora',system-ui,sans-serif;
+  font-variant-numeric:tabular-nums;padding-top:env(safe-area-inset-top,0px)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit}
+.app{max-width:520px;margin:0 auto;padding:0 18px 110px}
+header{display:flex;justify-content:space-between;align-items:center;padding:18px 0 6px}
+header h1{font-size:15px;font-weight:600;margin:0;color:var(--muted)}
+.gear{width:38px;height:38px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--muted)}
+.view{display:none} .view.on{display:block}
+
+/* HERO */
+.hero{padding:22px 0 6px}
+.hero .label{font-size:14px;color:var(--muted)}
+.hero .total{font-size:52px;font-weight:700;letter-spacing:-.03em;line-height:1.05;margin:4px 0 14px}
+.hero .total small{font-size:26px;font-weight:600;color:var(--muted)}
+.grow{display:inline-flex;align-items:center;gap:10px;background:var(--amber-soft);color:var(--amber);
+  padding:10px 14px;border-radius:999px;font-size:14px;font-weight:600}
+.grow .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.3}} @media (prefers-reduced-motion:reduce){.grow .dot{animation:none}}
+
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:22px 0}
+.card{background:var(--surface);border-radius:var(--radius);padding:16px}
+.card .k{font-size:13px;color:var(--muted)} .card .v{font-size:22px;font-weight:600;margin-top:4px}
+.card.wide{grid-column:1/-1}
+.bar{height:8px;background:var(--line);border-radius:999px;margin:12px 0 6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green);border-radius:999px;transition:width .6s ease}
+
+h2{font-size:17px;font-weight:600;margin:24px 0 10px}
+.list{background:var(--surface);border-radius:var(--radius);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.ico{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none;font-size:18px}
+.ico.in{background:var(--green-soft)} .ico.out{background:#F6E3DF} .ico.int{background:var(--amber-soft)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ico.out{background:#3A1F1A}}
+.row .t{flex:1;min-width:0} .row .t b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .t span{font-size:13px;color:var(--muted)}
+.amt{font-weight:600;white-space:nowrap} .amt.in{color:var(--green)} .amt.out{color:var(--red)} .amt.int{color:var(--amber)}
+.month-head{padding:16px 16px 4px;font-size:13px;color:var(--muted);border-top:1px solid var(--line)}
+.empty{padding:28px 18px;color:var(--muted);text-align:center;font-size:15px}
+
+/* controls */
+.ctl{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:10px}
+.ctl label{display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px}
+.ctl label output{font-weight:600}
+input[type=range]{width:100%;accent-color:var(--green)}
+input[type=text],input[type=url],input[type=number]{width:100%;padding:12px 14px;border:1px solid var(--line);
+  border-radius:12px;background:var(--bg);color:var(--ink)}
+.btn{display:inline-block;background:var(--green);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px}
+.chip{padding:8px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px}
+.chip.on{background:var(--green);color:#fff;border-color:var(--green)}
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px;font-size:13px;color:var(--muted);margin:10px 2px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+svg.chart{width:100%;height:auto;display:block;background:var(--surface);border-radius:var(--radius)}
+.note{font-size:14px;color:var(--muted);line-height:1.55;margin:10px 2px}
+.lesson{background:var(--green-soft);border-radius:var(--radius);padding:16px;font-size:14.5px;line-height:1.55;margin-top:14px}
+.lesson b{color:var(--green)}
+.msg{font-size:13px;color:var(--muted);margin-top:8px}
+.demo{display:inline-block;font-size:12px;background:var(--amber-soft);color:var(--amber);padding:4px 10px;border-radius:999px;margin-left:8px}
+
+/* tabs */
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);
+  padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px))}
+nav .in{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+nav button{padding:8px 4px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:12px}
+nav button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button.on{color:var(--green);font-weight:600}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header><h1 id="title">Salvadanaio</h1>
+    <button class="gear" id="gearBtn" aria-label="Impostazioni">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </header>
+
+  <!-- HOME -->
+  <section class="view on" id="v-home">
+    <div class="hero">
+      <div class="label">Hai da parte <span id="demoBadge" class="demo" hidden>dati di esempio</span></div>
+      <div class="total" id="saldo">—</div>
+      <div class="grow"><span class="dot"></span><span id="growTxt">In questo momento stai guadagnando…</span></div>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="k">Versato da te</div><div class="v" id="versato">—</div></div>
+      <div class="card"><div class="k">Interessi guadagnati</div><div class="v" id="interessi" style="color:var(--amber)">—</div></div>
+      <div class="card wide"><div class="k" id="nextLabel">Prossimo accredito</div><div class="v" id="nextVal">—</div>
+        <div class="msg" id="nextMsg"></div></div>
+      <div class="card wide" id="goalCard" hidden><div class="k" id="goalK">Obiettivo</div><div class="v" id="goalV"></div>
+        <div class="bar"><i id="goalBar" style="width:0"></i></div><div class="msg" id="goalMsg"></div></div>
+    </div>
+    <h2>Ultimi movimenti</h2>
+    <div class="list" id="recent"></div>
+    <div class="msg" id="updated"></div>
+  </section>
+
+  <!-- MOVIMENTI -->
+  <section class="view" id="v-mov">
+    <h2 style="margin-top:14px">Tutti i movimenti</h2>
+    <div class="chips" id="filters">
+      <button class="chip on" data-f="all">Tutti</button>
+      <button class="chip" data-f="in">Versamenti</button>
+      <button class="chip" data-f="out">Prelievi</button>
+      <button class="chip" data-f="int">Interessi</button>
+    </div>
+    <div class="list" id="allMov"></div>
+  </section>
+
+  <!-- PROIEZIONI -->
+  <section class="view" id="v-proj">
+    <h2 style="margin-top:14px">Se continui così…</h2>
+    <div class="ctl">
+      <label>Per quanti anni <output id="oY">5 anni</output></label>
+      <input type="range" id="pY" min="1" max="30" value="5">
+      <label style="margin-top:14px">Metti da parte ogni mese <output id="oM">€ 20</output></label>
+      <input type="range" id="pM" min="0" max="300" step="5" value="20">
+      <label style="margin-top:14px">Tasso annuo <output id="oR">5%</output></label>
+      <input type="range" id="pR" min="0" max="15" step="0.5" value="5">
+      <div class="chips" style="margin:10px 0 0">
+        <button class="chip" data-r="0">Materasso 0%</button>
+        <button class="chip" data-r="3">Conto deposito 3%</button>
+        <button class="chip" data-r="5">Il tuo tasso</button>
+        <button class="chip" data-r="7">Azioni (media storica) 7%</button>
+      </div>
+    </div>
+    <svg class="chart" id="projChart" viewBox="0 0 520 300" role="img" aria-label="Grafico delle proiezioni"></svg>
+    <div class="legend">
+      <span><i style="background:var(--muted)"></i>Soldi messi da te</span>
+      <span><i style="background:var(--green);opacity:.5"></i>Interesse semplice</span>
+      <span><i style="background:var(--green)"></i>Interesse composto</span>
+      <span><i style="background:var(--red)"></i>Composto, al netto dell'inflazione 2%</span>
+    </div>
+    <div class="cards" style="margin-top:8px">
+      <div class="card"><div class="k">Avrai messo tu</div><div class="v" id="prVersato">—</div></div>
+      <div class="card"><div class="k">Avrai in totale</div><div class="v" id="prTotale" style="color:var(--green)">—</div></div>
+      <div class="card wide"><div class="k">Di cui regalati dagli interessi</div><div class="v" id="prInt" style="color:var(--amber)">—</div>
+        <div class="msg" id="prMsg"></div></div>
+    </div>
+    <div class="lesson" id="lessonProj"></div>
+  </section>
+
+  <!-- CONFRONTA -->
+  <section class="view" id="v-cmp">
+    <h2 style="margin-top:14px">E se avessi scelto diversamente?</h2>
+    <p class="note">Stessi versamenti e prelievi che hai fatto davvero, ma con regole diverse. Così vedi quanto conta la scelta.</p>
+    <div class="ctl">
+      <label>Tasso alternativo <output id="oC">3%</output></label>
+      <input type="range" id="pC" min="0" max="15" step="0.5" value="3">
+    </div>
+    <div class="list" id="cmpList"></div>
+    <div class="lesson" id="lessonCmp"></div>
+  </section>
+
+  <!-- IMPOSTAZIONI -->
+  <section class="view" id="v-set">
+    <h2 style="margin-top:14px">Impostazioni</h2>
+    <div class="ctl">
+      <label>Indirizzo del foglio (URL dello script, finisce con /exec)</label>
+      <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/…/exec">
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" id="saveApi">Salva e aggiorna</button>
+        <button class="btn ghost" id="clearApi">Usa dati di esempio</button>
+      </div>
+      <div class="msg" id="apiMsg"></div>
+    </div>
+    <p class="note">Come funziona: i versamenti e i prelievi li scrive chi gestisce il foglio. Gli interessi li calcola l'app ogni giorno sul saldo e li accredita l'ultimo giorno del mese, come fa una banca.</p>
+    <p class="note" id="rateInfo"></p>
+  </section>
+</div>
+
+<nav><div class="in">
+  <button data-v="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/></svg>Casa</button>
+  <button data-v="mov"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Movimenti</button>
+  <button data-v="proj"><svg viewBox="0 0 24 24"><path d="M3 20h18M5 16l5-6 4 3 5-8"/></svg>Futuro</button>
+  <button data-v="cmp"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 7h6M15 7h6M4.5 7l-2 6a2.5 2.5 0 0 0 5 0zM16.5 7l-2 6a2.5 2.5 0 0 0 5 0z"/></svg>Confronta</button>
+</div></nav>
+
+<script>
+/* ================== CONFIG ================== */
+const API_URL_DEFAULT = ''; // facoltativo: incolla qui l'URL /exec per non doverlo impostare dal telefono
+const LS = { api:'sdn_api', cache:'sdn_cache' };
+const EUR = new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'});
+const fmt = v => EUR.format(v);
+const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+const d2 = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const today = () => { const t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); };
+const round2 = x => Math.round(x*100)/100;
+const dateIt = d => d.toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'});
+
+/* ================== DATI DI ESEMPIO ================== */
+function demoData(){
+  const t = today(); const y=t.getFullYear(), m=t.getMonth();
+  const mk=(dm,dd,desc,imp,cat)=>({data:iso(new Date(y,m+dm,dd)),descrizione:desc,importo:imp,categoria:cat});
+  return {
+    impostazioni:{nome:'Salvadanaio di Luca',data_apertura:iso(new Date(y,m-8,1)),obiettivo_nome:'Bici nuova',obiettivo_importo:400},
+    tassi:[{dal:iso(new Date(y,m-8,1)),tasso:5}],
+    movimenti:[
+      mk(-8,1,'Apertura salvadanaio',50,'Versamento'), mk(-7,10,'Paghetta',20,'Versamento'),
+      mk(-6,2,'Regalo nonni',100,'Versamento'), mk(-5,14,'Paghetta',20,'Versamento'),
+      mk(-4,20,'Videogioco',-30,'Prelievo'), mk(-3,5,'Paghetta',20,'Versamento'),
+      mk(-2,11,'Lavoretto in garage',35,'Versamento'), mk(-1,3,'Paghetta',20,'Versamento'),
+      mk(0,2,'Paghetta',20,'Versamento')
+    ]
+  };
+}
+
+/* ================== MOTORE INTERESSI ================== */
+/**
+ * Ripercorre giorno per giorno dalla data di apertura a oggi.
+ * Ogni giorno: saldo × tasso/365. Fine mese: accredito (composto) oppure accantonamento (semplice).
+ */
+function simulate(data, opts={}){
+  const compound = opts.compound !== false;
+  const rateOverride = opts.rate;
+  const movs = [...data.movimenti].sort((a,b)=>a.data.localeCompare(b.data));
+  const rates = [...(data.tassi||[])].sort((a,b)=>a.dal.localeCompare(b.dal));
+  const rateOn = ds => { if(rateOverride!=null) return rateOverride; let r=0; for(const x of rates){ if(x.dal<=ds) r=x.tasso; else break;} return r; };
+  const start = data.impostazioni.data_apertura ? d2(data.impostazioni.data_apertura) : (movs[0]?d2(movs[0].data):today());
+  const end = today();
+  const byDay = {}; movs.forEach(mv=>{ (byDay[mv.data] ||= []).push(mv); });
+
+  let balance=0, principal=0, accrued=0, simpleBank=0, totalInt=0;
+  const entries=[]; // movimenti reali + interessi generati
+  let d = new Date(Math.min(start, movs[0]?d2(movs[0].data):start));
+  // movimenti precedenti all'apertura (per sicurezza)
+  while(d<=end){
+    const ds=iso(d);
+    (byDay[ds]||[]).forEach(mv=>{ balance+=mv.importo; principal+=mv.importo; entries.push({...mv, tipo: mv.importo>=0?'in':'out', saldo:0}); });
+    const r=rateOn(ds)/100;
+    const base = compound ? balance : (balance - 0); // per il semplice la base è il saldo senza interessi (interessi tenuti da parte)
+    if(base>0 && r>0) accrued += base*r/365;
+    const nd=new Date(d); nd.setDate(nd.getDate()+1);
+    const monthEnds = nd.getMonth()!==d.getMonth();
+    if(monthEnds && accrued>0){
+      const amt=round2(accrued);
+      if(amt>0){
+        if(compound) balance+=amt; else simpleBank+=amt;
+        totalInt+=amt;
+        entries.push({data:ds,descrizione:`Interessi ${MESI[d.getMonth()]} ${d.getFullYear()}`,importo:amt,tipo:'int',saldo:0});
+      }
+      accrued=0;
+    }
+    d=nd;
+  }
+  // saldo progressivo
+  let run=0; entries.forEach(e=>{ run+=e.importo; e.saldo=round2(run); });
+  const lastDay = new Date(end.getFullYear(), end.getMonth()+1, 0);
+  return {
+    saldo: round2(balance + (compound?0:simpleBank)),
+    principal: round2(principal), totalInt: round2(totalInt), accrued, rateToday: rateOn(iso(end)),
+    daysToMonthEnd: Math.round((lastDay-end)/86400000), monthEnd:lastDay,
+    perSecond: (balance>0? balance*rateOn(iso(end))/100/365/86400 : 0),
+    entries: entries.reverse(), start
+  };
+}
+
+/* ================== PROIEZIONE ================== */
+function project(start, monthly, annualRate, years){
+  const r=annualRate/100/12, n=years*12, infl=0.02/12;
+  const pts=[]; let comp=start, simple=start, simpleInt=0, paid=start;
+  for(let i=0;i<=n;i++){
+    pts.push({m:i, paid, simple: simple+simpleInt, comp, real: comp/Math.pow(1+infl,i)});
+    comp = comp*(1+r)+monthly; simpleInt += simple*r; simple += monthly; paid += monthly;
+  }
+  return pts;
+}
+
+/* ================== RENDER ================== */
+let DATA=null, SIM=null, filter='all', ticker=null;
+const $=id=>document.getElementById(id);
+
+function rowHTML(e){
+  const cls=e.tipo, sign=e.importo>=0?'+':'−';
+  const icon = cls==='int'?'✦':(cls==='in'?'↓':'↑');
+  return `<div class="row"><div class="ico ${cls}">${icon}</div>
+    <div class="t"><b>${esc(e.descrizione||(cls==='in'?'Versamento':'Prelievo'))}</b><span>${dateIt(d2(e.data))} · saldo ${fmt(e.saldo)}</span></div>
+    <div class="amt ${cls}">${sign} ${fmt(Math.abs(e.importo))}</div></div>`;
+}
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+function renderHome(){
+  const s=SIM, imp=DATA.impostazioni;
+  $('title').textContent = imp.nome || 'Salvadanaio';
+  $('saldo').innerHTML = fmt(s.saldo).replace(/,(\d\d)/,'<small>,$1</small>');
+  $('versato').textContent = fmt(s.principal);
+  $('interessi').textContent = fmt(s.totalInt);
+  $('nextVal').textContent = fmt(round2(s.accrued));
+  $('nextMsg').textContent = s.rateToday>0
+    ? `Maturati finora questo mese al ${s.rateToday}% annuo. Verranno aggiunti al saldo il ${dateIt(s.monthEnd)}, tra ${s.daysToMonthEnd} giorni.`
+    : 'Nessun tasso impostato: i soldi non crescono.';
+  if(imp.obiettivo_importo>0){
+    const p=Math.min(100, s.saldo/imp.obiettivo_importo*100);
+    $('goalCard').hidden=false; $('goalK').textContent=`Obiettivo: ${imp.obiettivo_nome||'risparmio'}`;
+    $('goalV').textContent=`${fmt(s.saldo)} di ${fmt(imp.obiettivo_importo)}`;
+    $('goalBar').style.width=p+'%';
+    $('goalMsg').textContent = p>=100 ? 'Obiettivo raggiunto!' : `Manca ${fmt(round2(imp.obiettivo_importo-s.saldo))} (${Math.round(p)}% fatto)`;
+  } else $('goalCard').hidden=true;
+  $('recent').innerHTML = s.entries.slice(0,5).map(rowHTML).join('') || '<div class="empty">Ancora nessun movimento. Il primo versamento comparirà qui.</div>';
+  // ticker
+  clearInterval(ticker);
+  const t0=Date.now(), base = s.accrued;
+  const tick=()=>{ const v=base + s.perSecond*(Date.now()-t0)/1000;
+    $('growTxt').textContent = s.perSecond>0 ? `Stai guadagnando ${v.toFixed(5).replace('.',',')} € questo mese` : 'Imposta un tasso per far crescere i soldi'; };
+  tick(); if(s.perSecond>0) ticker=setInterval(tick,250);
+}
+function renderMov(){
+  const list = SIM.entries.filter(e=>filter==='all'||e.tipo===filter);
+  let html='', last='';
+  for(const e of list){ const k=e.data.slice(0,7); if(k!==last){ last=k; const d=d2(e.data); html+=`<div class="month-head">${MESI[d.getMonth()]} ${d.getFullYear()}</div>`; } html+=rowHTML(e); }
+  $('allMov').innerHTML = html || '<div class="empty">Niente da mostrare qui.</div>';
+}
+function renderProj(){
+  const Y=+$('pY').value, M=+$('pM').value, R=+$('pR').value;
+  $('oY').textContent=`${Y} ann${Y===1?'o':'i'}`; $('oM').textContent=fmt(M); $('oR').textContent=`${R}%`;
+  document.querySelectorAll('#v-proj .chip').forEach(c=>c.classList.toggle('on', +c.dataset.r===R));
+  const pts=project(SIM.saldo, M, R, Y), last=pts[pts.length-1];
+  $('prVersato').textContent=fmt(last.paid); $('prTotale').textContent=fmt(round2(last.comp));
+  $('prInt').textContent=fmt(round2(last.comp-last.paid));
+  const simpleGain=last.simple-last.paid, compGain=last.comp-last.paid;
+  $('prMsg').textContent = R>0 ? `Con l'interesse semplice sarebbero ${fmt(round2(simpleGain))}: il composto ti dà ${fmt(round2(compGain-simpleGain))} in più perché gli interessi fanno altri interessi.` : '';
+  drawChart(pts, Y);
+  const dbl = R>0 ? Math.round(72/R) : null;
+  $('lessonProj').innerHTML = R>0
+    ? `<b>Regola del 72.</b> Al ${R}% annuo i tuoi soldi raddoppiano da soli in circa <b>${dbl} anni</b> (72 ÷ ${R}). ` +
+      (Y>=dbl ? `In ${Y} anni succede ${Math.floor(Y/dbl)} volt${Math.floor(Y/dbl)===1?'a':'e'}.` : `Per vederlo tutto servirebbero ${dbl-Y} anni in più: il tempo è l'ingrediente più importante.`) +
+      ` La linea rossa ricorda che intanto i prezzi salgono: ciò che conta è quanto puoi comprare, non solo il numero.`
+    : `<b>Tasso zero.</b> I soldi sotto il materasso restano uguali di numero, ma ogni anno comprano un po' meno (linea rossa). Prova a spostare il tasso.`;
+}
+function drawChart(pts, years){
+  const W=520,H=300,L=58,R=14,T=18,B=34, max=Math.max(...pts.map(p=>p.comp))*1.05||1;
+  const x=i=>L+(W-L-R)*i/(pts.length-1), y=v=>T+(H-T-B)*(1-v/max);
+  const line=(k,col,op=1,w=2.5)=>`<polyline fill="none" stroke="${col}" stroke-width="${w}" stroke-opacity="${op}" stroke-linejoin="round" points="${pts.map((p,i)=>`${x(i).toFixed(1)},${y(p[k]).toFixed(1)}`).join(' ')}"/>`;
+  let g='';
+  for(let i=0;i<=4;i++){ const v=max*i/4; g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${Math.round(v)} €</text>`; }
+  const step = years<=6?1: years<=12?2:5;
+  for(let yr=0;yr<=years;yr+=step){ const i=yr*12; g+=`<text x="${x(i)}" y="${H-12}" text-anchor="middle" font-size="11" fill="var(--muted)">${yr===0?'oggi':yr+' a.'}</text>`; }
+  $('projChart').innerHTML = g + line('paid','var(--muted)',1,2) + line('simple','var(--green)',.5) + line('real','var(--red)',1,2) + line('comp','var(--green)',1,3);
+}
+function renderCmp(){
+  const C=+$('pC').value; $('oC').textContent=`${C}%`;
+  const real=SIM, simple=simulate(DATA,{compound:false}), alt=simulate(DATA,{rate:C}), zero=simulate(DATA,{rate:0});
+  const items=[
+    ['Com\'è davvero', `composto al tasso del foglio`, real.saldo, 'var(--green)'],
+    ['Interesse semplice', `stesso tasso, ma gli interessi non fruttano`, simple.saldo, 'var(--ink)'],
+    [`Tasso al ${C}%`, `composto`, alt.saldo, 'var(--ink)'],
+    ['Sotto il materasso', `nessun interesse`, zero.saldo, 'var(--red)']
+  ];
+  $('cmpList').innerHTML = items.map(([k,d,v,col])=>`<div class="row"><div class="t"><b>${k}</b><span>${d}</span></div><div class="amt" style="color:${col}">${fmt(v)}</div></div>`).join('');
+  const diffS=round2(real.saldo-simple.saldo);
+  $('lessonCmp').innerHTML = `Da quando hai aperto il salvadanaio (${dateIt(real.start)}) gli interessi ti hanno dato <b>${fmt(real.totalInt)}</b>. ` +
+    (diffS>0 ? `Di questi, <b>${fmt(diffS)}</b> sono "interessi sugli interessi": con il tempo questa parte diventa la più grande.` : `La differenza tra composto e semplice è ancora piccola: cresce con gli anni, non con i mesi.`);
+}
+function renderAll(){ SIM=simulate(DATA); renderHome(); renderMov(); renderProj(); renderCmp();
+  const rates=(DATA.tassi||[]).map(t=>`${t.tasso}% dal ${dateIt(d2(t.dal))}`).join(', ');
+  $('rateInfo').textContent = rates ? `Tassi impostati: ${rates}.` : 'Nessun tasso nel foglio "Tassi".'; }
+
+/* ================== CARICAMENTO ================== */
+async function load(){
+  const url = localStorage.getItem(LS.api) || API_URL_DEFAULT;
+  $('apiUrl').value=url;
+  const cached = JSON.parse(localStorage.getItem(LS.cache)||'null');
+  if(!url){ DATA=demoData(); $('demoBadge').hidden=false; $('updated').textContent=''; renderAll(); return; }
+  $('demoBadge').hidden=true;
+  if(cached){ DATA=cached.data; renderAll(); $('updated').textContent=`Aggiornato ${new Date(cached.at).toLocaleString('it-IT')} · sto aggiornando…`; }
+  try{
+    const res=await fetch(url,{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json(); if(!data.movimenti) throw new Error('risposta non valida');
+    DATA=data; localStorage.setItem(LS.cache,JSON.stringify({at:Date.now(),data})); renderAll();
+    $('updated').textContent=`Aggiornato ${new Date().toLocaleString('it-IT')}`; $('apiMsg').textContent='Collegato al foglio.';
+  }catch(err){
+    if(!DATA){ DATA=demoData(); $('demoBadge').hidden=false; renderAll(); }
+    $('updated').textContent='Non riesco a leggere il foglio: mostro l\'ultima versione salvata.';
+    $('apiMsg').textContent=`Errore: ${err.message}. Controlla che lo script sia pubblicato come "Chiunque".`;
+  }
+}
+
+/* ================== EVENTI ================== */
+function show(v){ document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on', s.id==='v-'+v));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on', b.dataset.v===v)); window.scrollTo(0,0); }
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
+$('gearBtn').onclick=()=>show('set');
+$('filters').onclick=e=>{ const c=e.target.closest('.chip'); if(!c) return; filter=c.dataset.f;
+  document.querySelectorAll('#filters .chip').forEach(x=>x.classList.toggle('on',x===c)); renderMov(); };
+['pY','pM','pR'].forEach(id=>$(id).oninput=renderProj);
+document.querySelectorAll('#v-proj .chip').forEach(c=>c.onclick=()=>{ $('pR').value=c.dataset.r==='5'?(SIM.rateToday||5):c.dataset.r; renderProj(); });
+$('pC').oninput=renderCmp;
+$('saveApi').onclick=()=>{ localStorage.setItem(LS.api,$('apiUrl').value.trim()); localStorage.removeItem(LS.cache); $('apiMsg').textContent='Carico…'; load(); };
+$('clearApi').onclick=()=>{ localStorage.removeItem(LS.api); localStorage.removeItem(LS.cache); $('apiUrl').value=''; load(); };
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) load(); });
+load();
+</script>
+</body>
+</html>
