@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1B5E3F">
-<title>Salvadanaio</title>
+<title>Salvadanaio di Enrico</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -201,7 +201,10 @@ nav button.on{color:var(--green);font-weight:600}
 
 <script>
 /* ================== CONFIG ================== */
-const API_URL_DEFAULT = ''; // facoltativo: incolla qui l'URL /exec per non doverlo impostare dal telefono
+// URL dello script Apps Script (finisce con /exec). Se compilato, l'app lo usa senza passare dalle impostazioni.
+const API_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycby59bH5i2RsqYexxvv9MFD7QpZFMYbOoRGPyHB3F1SIAun69kZdqLgtl0r9vjtF8kHC/exec';
+// Nome mostrato in alto. Se compilato, ha la precedenza sul campo "nome" del foglio.
+const NOME_SALVADANAIO = 'Salvadanaio di Enrico';
 const LS = { api:'sdn_api', cache:'sdn_cache' };
 const EUR = new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'});
 const fmt = v => EUR.format(v);
@@ -305,7 +308,7 @@ const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[
 
 function renderHome(){
   const s=SIM, imp=DATA.impostazioni;
-  $('title').textContent = imp.nome || 'Salvadanaio';
+  $('title').textContent = NOME_SALVADANAIO || imp.nome || 'Salvadanaio';
   $('saldo').innerHTML = fmt(s.saldo).replace(/,(\d\d)/,'<small>,$1</small>');
   $('versato').textContent = fmt(s.principal);
   $('interessi').textContent = fmt(s.totalInt);
@@ -364,16 +367,17 @@ function drawChart(pts, years){
 function renderCmp(){
   const C=+$('pC').value; $('oC').textContent=`${C}%`;
   const real=SIM, simple=simulate(DATA,{compound:false}), alt=simulate(DATA,{rate:C}), zero=simulate(DATA,{rate:0});
+  const mat = x => x.accrued>0 ? ` · maturati ${x.accrued.toFixed(4).replace('.',',')} €` : '';
   const items=[
-    ['Com\'è davvero', `composto al tasso del foglio`, real.saldo, 'var(--green)'],
-    ['Interesse semplice', `stesso tasso, ma gli interessi non fruttano`, simple.saldo, 'var(--ink)'],
-    [`Tasso al ${C}%`, `composto`, alt.saldo, 'var(--ink)'],
-    ['Sotto il materasso', `nessun interesse`, zero.saldo, 'var(--red)']
+    ['Com\'è davvero', `composto al tasso del foglio${mat(real)}`, real, 'var(--green)'],
+    ['Interesse semplice', `stesso tasso, ma gli interessi non fruttano${mat(simple)}`, simple, 'var(--ink)'],
+    [`Tasso al ${C}%`, `composto${mat(alt)}`, alt, 'var(--ink)'],
+    ['Sotto il materasso', `nessun interesse`, zero, 'var(--red)']
   ];
-  $('cmpList').innerHTML = items.map(([k,d,v,col])=>`<div class="row"><div class="t"><b>${k}</b><span>${d}</span></div><div class="amt" style="color:${col}">${fmt(v)}</div></div>`).join('');
+  $('cmpList').innerHTML = items.map(([k,d,x,col])=>`<div class="row"><div class="t"><b>${k}</b><span>${d}</span></div><div class="amt" style="color:${col}">${fmt(x.saldo)}</div></div>`).join('');
   const diffS=round2(real.saldo-simple.saldo);
   $('lessonCmp').innerHTML = `Da quando hai aperto il salvadanaio (${dateIt(real.start)}) gli interessi ti hanno dato <b>${fmt(real.totalInt)}</b>. ` +
-    (diffS>0 ? `Di questi, <b>${fmt(diffS)}</b> sono "interessi sugli interessi": con il tempo questa parte diventa la più grande.` : `La differenza tra composto e semplice è ancora piccola: cresce con gli anni, non con i mesi.`);
+    (diffS>0 ? `Di questi, <b>${fmt(diffS)}</b> sono "interessi sugli interessi": con il tempo questa parte diventa la più grande.` : `Gli interessi vengono accreditati l'ultimo giorno del mese: per ora le righe sono quasi uguali. La differenza tra composto e semplice cresce con gli anni, non con i mesi.`);
 }
 function renderAll(){ SIM=simulate(DATA); renderHome(); renderMov(); renderProj(); renderCmp();
   const rates=(DATA.tassi||[]).map(t=>`${t.tasso}% dal ${dateIt(d2(t.dal))}`).join(', ');
@@ -381,7 +385,8 @@ function renderAll(){ SIM=simulate(DATA); renderHome(); renderMov(); renderProj(
 
 /* ================== CARICAMENTO ================== */
 async function load(){
-  const url = localStorage.getItem(LS.api) || API_URL_DEFAULT;
+  const saved = localStorage.getItem(LS.api);
+  const url = saved==='demo' ? '' : (saved || API_URL_DEFAULT);
   $('apiUrl').value=url;
   const cached = JSON.parse(localStorage.getItem(LS.cache)||'null');
   if(!url){ DATA=demoData(); $('demoBadge').hidden=false; $('updated').textContent=''; renderAll(); return; }
@@ -410,7 +415,7 @@ $('filters').onclick=e=>{ const c=e.target.closest('.chip'); if(!c) return; filt
 document.querySelectorAll('#v-proj .chip').forEach(c=>c.onclick=()=>{ $('pR').value=c.dataset.r==='5'?(SIM.rateToday||5):c.dataset.r; renderProj(); });
 $('pC').oninput=renderCmp;
 $('saveApi').onclick=()=>{ localStorage.setItem(LS.api,$('apiUrl').value.trim()); localStorage.removeItem(LS.cache); $('apiMsg').textContent='Carico…'; load(); };
-$('clearApi').onclick=()=>{ localStorage.removeItem(LS.api); localStorage.removeItem(LS.cache); $('apiUrl').value=''; load(); };
+$('clearApi').onclick=()=>{ localStorage.setItem(LS.api,'demo'); localStorage.removeItem(LS.cache); $('apiUrl').value=''; load(); };
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) load(); });
 load();
 </script>
