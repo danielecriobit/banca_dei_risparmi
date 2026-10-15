@@ -93,9 +93,6 @@ nav button.on{color:var(--green);font-weight:600}
 <body>
 <div class="app">
   <header><h1 id="title">Salvadanaio</h1>
-    <button class="gear" id="gearBtn" aria-label="Impostazioni">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-    </button>
   </header>
 
   <!-- HOME -->
@@ -175,21 +172,6 @@ nav button.on{color:var(--green);font-weight:600}
     <div class="lesson" id="lessonCmp"></div>
   </section>
 
-  <!-- IMPOSTAZIONI -->
-  <section class="view" id="v-set">
-    <h2 style="margin-top:14px">Impostazioni</h2>
-    <div class="ctl">
-      <label>Indirizzo del foglio (URL dello script, finisce con /exec)</label>
-      <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/…/exec">
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button class="btn" id="saveApi">Salva e aggiorna</button>
-        <button class="btn ghost" id="clearApi">Usa dati di esempio</button>
-      </div>
-      <div class="msg" id="apiMsg"></div>
-    </div>
-    <p class="note">Come funziona: i versamenti e i prelievi li scrive chi gestisce il foglio. Gli interessi li calcola l'app ogni giorno sul saldo e li accredita l'ultimo giorno del mese, come fa una banca.</p>
-    <p class="note" id="rateInfo"></p>
-  </section>
 </div>
 
 <nav><div class="in">
@@ -205,7 +187,7 @@ nav button.on{color:var(--green);font-weight:600}
 const API_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycby59bH5i2RsqYexxvv9MFD7QpZFMYbOoRGPyHB3F1SIAun69kZdqLgtl0r9vjtF8kHC/exec';
 // Nome mostrato in alto. Se compilato, ha la precedenza sul campo "nome" del foglio.
 const NOME_SALVADANAIO = 'Salvadanaio di Enrico';
-const LS = { api:'sdn_api', cache:'sdn_cache' };
+const LS = { cache:'sdn_cache' };
 const EUR = new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'});
 const fmt = v => EUR.format(v);
 const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
@@ -379,15 +361,11 @@ function renderCmp(){
   $('lessonCmp').innerHTML = `Da quando hai aperto il salvadanaio (${dateIt(real.start)}) gli interessi ti hanno dato <b>${fmt(real.totalInt)}</b>. ` +
     (diffS>0 ? `Di questi, <b>${fmt(diffS)}</b> sono "interessi sugli interessi": con il tempo questa parte diventa la più grande.` : `Gli interessi vengono accreditati l'ultimo giorno del mese: per ora le righe sono quasi uguali. La differenza tra composto e semplice cresce con gli anni, non con i mesi.`);
 }
-function renderAll(){ SIM=simulate(DATA); renderHome(); renderMov(); renderProj(); renderCmp();
-  const rates=(DATA.tassi||[]).map(t=>`${t.tasso}% dal ${dateIt(d2(t.dal))}`).join(', ');
-  $('rateInfo').textContent = rates ? `Tassi impostati: ${rates}.` : 'Nessun tasso nel foglio "Tassi".'; }
+function renderAll(){ SIM=simulate(DATA); renderHome(); renderMov(); renderProj(); renderCmp(); }
 
 /* ================== CARICAMENTO ================== */
 async function load(){
-  const saved = localStorage.getItem(LS.api);
-  const url = saved==='demo' ? '' : (saved || API_URL_DEFAULT);
-  $('apiUrl').value=url;
+  const url = API_URL_DEFAULT;
   const cached = JSON.parse(localStorage.getItem(LS.cache)||'null');
   if(!url){ DATA=demoData(); $('demoBadge').hidden=false; $('updated').textContent=''; renderAll(); return; }
   $('demoBadge').hidden=true;
@@ -396,11 +374,10 @@ async function load(){
     const res=await fetch(url,{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json(); if(!data.movimenti) throw new Error('risposta non valida');
     DATA=data; localStorage.setItem(LS.cache,JSON.stringify({at:Date.now(),data})); renderAll();
-    $('updated').textContent=`Aggiornato ${new Date().toLocaleString('it-IT')}`; $('apiMsg').textContent='Collegato al foglio.';
+    $('updated').textContent=`Aggiornato ${new Date().toLocaleString('it-IT')}`;
   }catch(err){
     if(!DATA){ DATA=demoData(); $('demoBadge').hidden=false; renderAll(); }
-    $('updated').textContent='Non riesco a leggere il foglio: mostro l\'ultima versione salvata.';
-    $('apiMsg').textContent=`Errore: ${err.message}. Controlla che lo script sia pubblicato come "Chiunque".`;
+    $('updated').textContent=`Non riesco a leggere il foglio (${err.message}): mostro l'ultima versione salvata.`;
   }
 }
 
@@ -408,14 +385,11 @@ async function load(){
 function show(v){ document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on', s.id==='v-'+v));
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on', b.dataset.v===v)); window.scrollTo(0,0); }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
-$('gearBtn').onclick=()=>show('set');
 $('filters').onclick=e=>{ const c=e.target.closest('.chip'); if(!c) return; filter=c.dataset.f;
   document.querySelectorAll('#filters .chip').forEach(x=>x.classList.toggle('on',x===c)); renderMov(); };
 ['pY','pM','pR'].forEach(id=>$(id).oninput=renderProj);
 document.querySelectorAll('#v-proj .chip').forEach(c=>c.onclick=()=>{ $('pR').value=c.dataset.r==='5'?(SIM.rateToday||5):c.dataset.r; renderProj(); });
 $('pC').oninput=renderCmp;
-$('saveApi').onclick=()=>{ localStorage.setItem(LS.api,$('apiUrl').value.trim()); localStorage.removeItem(LS.cache); $('apiMsg').textContent='Carico…'; load(); };
-$('clearApi').onclick=()=>{ localStorage.setItem(LS.api,'demo'); localStorage.removeItem(LS.cache); $('apiUrl').value=''; load(); };
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) load(); });
 load();
 </script>
